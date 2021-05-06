@@ -1,0 +1,28 @@
+# Keys for Exchanges and Services
+*.json
+# Leave the Template
+!template_keys.json
+
+# Partially Deleted Files
+.fuse*
+
+# Don't Care About Me Learning Shit Files
+GET_practice/*
+
+# Leave the Price History Out of It
+dogecoin_price_history/*
+ethereum_price_history/*
+# But leave an example of each behind
+!dogecoin_price_history/124.csv
+!ethereum_price_history/124.csv
+
+# Ditch Buy/Sell Histories
+histories/*.csv
+
+# Leave config_files out of it
+*.conf
+# Except for an example
+!config_files/temp.conf
+
+# No pycache
+src/__pycache__/*

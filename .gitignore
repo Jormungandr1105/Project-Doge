@@ -1,7 +1,8 @@
 # Keys for Exchanges and Services
 *.json
-# Leave the Template
+# Leave the Templates
 !template_keys.json
+!template_users.json
 
 # Partially Deleted Files
 .fuse*

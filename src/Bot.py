@@ -11,6 +11,7 @@ class Bot():
 	network_size = [5,4,3]
 	path_to_configs = "../config_files/"
 	path_to_histories = "../histories/"
+	fees = .002 # .005 = .5%
 
 	def __init__(self, config_filename = None, parent = None, percent_d = None):
 		self.network = []
@@ -41,6 +42,7 @@ class Bot():
 			prev_layer = layer
 
 	def generate_from_config(self, filename):
+		print("GENERATING FROM CONFIGS: "+self.path_to_configs+filename)
 		f = open(self.path_to_configs+filename)
 		data = f.read()
 		all_data = data.split("\n")
@@ -85,12 +87,10 @@ class Bot():
 					self.network[layer_index][node] = Node.Node(bias,weights)
 			prev_layer = layer
 
-
 	def write_config(self, filename):
 		f = open(self.path_to_configs+filename, "w+")
 		node_index = 0
 		layer_index = 0
-		
 		net_size = len(self.network)-1
 		while (layer_index!=net_size) or (node_index!=self.network_size[net_size]):
 			if node_index == self.network_size[layer_index]: # go to next layer
@@ -182,8 +182,8 @@ def train(data_csvs, num_instances, num_generations, config_file = None):
 		best_of_all_val, best_of_all = run_sim(all_data,config_file=config_file)
 		print("Starting Value:",best_of_all_val)
 	for i in range(num_generations):
-		best_of_gen = best_of_all
-		best_of_gen_val = best_of_all_val
+		best_of_gen = None
+		best_of_gen_val = -100000
 		for j in range(num_instances):
 			if best_of_all is None:
 				value, network = run_sim(all_data)
@@ -239,7 +239,7 @@ def run_sim(data, config_file = None, parent = None, percent_d = None):
 		assert(percent_d is not None)
 		net = Bot(parent=parent, percent_d=percent_d)
 	else:
-		net = Bot(config_file)
+		net = Bot(config_filename=config_file)
 	data_entry = 0
 	for single_data in data:
 		all_data = single_data.split("\n")
@@ -284,7 +284,7 @@ def run_sim(data, config_file = None, parent = None, percent_d = None):
 							doge_delta = math.floor((money*.95)/prices[0])
 							#doge_delta = (money*.95)/prices[0]
 							doge_wallet += doge_delta
-							money -= (float(doge_delta)*prices[0])
+							money -= calc_dues(float(doge_delta)*prices[0], net.fees, True)
 							hit = [(86400.00*data_entry)+time,price]
 							buys.append(hit)
 					elif output == 2:
@@ -292,7 +292,7 @@ def run_sim(data, config_file = None, parent = None, percent_d = None):
 							doge_delta = doge_wallet
 							doge_wallet = 0
 							hit = [(86400.00*data_entry)+time,price]
-							money += (float(doge_delta)*prices[0])
+							money += calc_dues(float(doge_delta)*prices[0], net.fees, False)
 							sells.append(hit)
 		data_entry += 1
 	doge_delta = doge_wallet
@@ -308,7 +308,7 @@ def test():
 	pass
 
 
-def run_real():
+def run_real(config_file=None):
 	pass
 
 
@@ -327,3 +327,11 @@ def calc_curl(times, prices):
 		pre_curl += (prices[i+1]-prices[i])
 	curl = pre_curl/float(times[-1]-times[0])
 	return curl
+
+
+def calc_dues(money, percentage, add):
+	if add:
+		post_fees = money + (money*percentage)
+	else:
+		post_fees = money - (money*percentage)
+	return post_fees

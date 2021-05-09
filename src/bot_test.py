@@ -5,16 +5,18 @@ import plot
 
 
 def train(read_from_config, config_save, csv_files, num_instances, num_generations):
-	value, test_bot = Bot.train(csv_files,num_instances,num_generations,read_from_config)
+	value, test_bot = Bot.train(csv_files,num_instances,num_generations,config_file=read_from_config)
 	print(value)
 	test_bot.write_config(config_save)
 	test_bot.write_history("buys.csv","sells.csv")
 	
 
 def check_values(config_file, data_csvs, buys_csv, sells_csv):
+	price_path = "../dogecoin_price_history/"
 	data_holder = []
 	for data_csv in data_csvs:
 		f = open(price_path+data_csv)
+		print(price_path+data_csv)
 		data_holder.append(f.read())
 		f.close()
 	value, test_bot = Bot.run_sim(data_holder, config_file=config_file)
@@ -36,37 +38,38 @@ def run(config, data_csvs):
 
 
 train_csvs = ["105.csv","106.csv","107.csv","108.csv","109.csv","110.csv"]
-test_csvs = ["121.csv","122.csv","123.csv","124.csv"]
-ether_csvs = ["../ethereum_price_history/123.csv","../ethereum_price_history/124.csv"]
+test_csvs = ["121.csv","122.csv","123.csv","124.csv","125.csv","126.csv","127.csv"]
+ether_csvs = ["123.csv","124.csv"]
 
 price_path = "../dogecoin_price_history/"
+eth_price_path = "../ethereum_price_history/"
 histories_ext = "../histories/"
 
 
 if __name__ == "__main__":
 	####### RUN CONFIGS ##########################################################
-	read_from_config=None
-	write_to_config="temp2.conf"
+	read_from_config="best_1252.conf"
+	write_to_config="a.conf"
 	## Training_Configs ##########################################################
-	train_bot=False
+	train_bot=True
 	training_data=train_csvs
 	base_config=read_from_config
 	save_config=write_to_config
-	num_instances = 1000
-	num_generations = 5
+	num_instances = 100
+	num_generations = 1
 	## Sim_Configs ###############################################################
 	run_sim=True
-	sim_csv_files=test_csvs
+	sim_csv_files=train_csvs
 	sim_config_file = write_to_config
 	## Plotting_Configs ##########################################################
 	plotting=True
-	plot_data=test_csvs
+	plot_data=train_csvs
 	plot_config_file = write_to_config
 	buys="buys.csv"
 	sells="sells.csv"
 	##############################################################################
 	if train_bot:
-		train(read_from_config, write_to_config, training_data, num_instances, num_generations)
+		train(base_config, save_config, training_data, num_instances, num_generations)
 	if run_sim:
 		run(sim_config_file, sim_csv_files)
 	if plotting:

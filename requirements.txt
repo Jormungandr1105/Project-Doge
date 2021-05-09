@@ -1,0 +1,3 @@
+shrimpy-python
+matplotlib
+json

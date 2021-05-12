@@ -1,17 +1,19 @@
 import random as rand
 import time
 import math
+import os
 # my classes
 import Node
-import CoinStats
+import CoinStats as CS
+import exchange as ex
 
 
 class Bot():
 
-	network_size = [5,4,3]
+	network_size = [4,5,3]
 	path_to_configs = "../config_files/"
 	path_to_histories = "../histories/"
-	fees = .002 # .005 = .5%
+	fees = .0052 # .005 = .5%
 
 	def __init__(self, config_filename = None, parent = None, percent_d = None):
 		self.network = []
@@ -32,7 +34,7 @@ class Bot():
 		for layer_index in range(len(self.network_size)):
 			layer = self.network_size[layer_index]
 			for node in range(layer):
-				if self.network_size.index(layer) == 0: # no need for weights
+				if layer_index == 0: # no need for weights
 					self.network[0][node] = Node.Node(rand.random(),empty_list)
 				else:
 					weights = []
@@ -72,7 +74,7 @@ class Bot():
 		for layer_index in range(len(self.network_size)):
 			layer = self.network_size[layer_index]
 			for node in range(layer):
-				if self.network_size.index(layer) == 0: # no need for weights
+				if layer_index == 0: # no need for weights
 					delta = percent_d*rand.uniform(-1.0,1.0)
 					bias = parent_bot.network[0][node].get_bias()
 					bias = bias+delta
@@ -83,11 +85,15 @@ class Bot():
 					for x in range(prev_layer): # generate random weights between 0 and 1
 						delta = percent_d*rand.uniform(-1.0,1.0)
 						weights[x] = weights[x]+delta
-						bias = bias+delta
+					delta = percent_d*rand.uniform(-1.0,1.0)
+					bias = bias+delta
 					self.network[layer_index][node] = Node.Node(bias,weights)
 			prev_layer = layer
 
 	def write_config(self, filename):
+		if os.path.exists(self.path_to_configs+filename):
+			os.remove(self.path_to_configs+filename)
+			time.sleep(.5)
 		f = open(self.path_to_configs+filename, "w+")
 		node_index = 0
 		layer_index = 0
@@ -124,7 +130,7 @@ class Bot():
 		f = open(self.path_to_histories+sell_file,"w+")
 		for y in range(len(sells)):
 			f.write(str(sells[y][0])+","+str(sells[y][1])+"\n")
-		f.close
+		f.close()
 
 
 	## HELPER FUNCTIONS FOR PROPAGATION
@@ -171,34 +177,41 @@ class Bot():
 def train(data_csvs, num_instances, num_generations, config_file = None):
 	path_to_prices = "../dogecoin_price_history/"
 	all_data = []
+	best_of_all_val = -100000.0
+	best_of_all = None
+	value = 0.0
 	for data_csv in data_csvs:
 		f = open(path_to_prices+data_csv)
 		data = f.read()
 		all_data.append(data)
-	if config_file is None:
-		best_of_all = None
-		best_of_all_val = -100000
-	else:
+	if config_file is not None:
 		best_of_all_val, best_of_all = run_sim(all_data,config_file=config_file)
 		print("Starting Value:",best_of_all_val)
 	for i in range(num_generations):
 		best_of_gen = None
-		best_of_gen_val = -100000
+		best_of_gen_val = -1000000.0
 		for j in range(num_instances):
 			if best_of_all is None:
 				value, network = run_sim(all_data)
+				print(str(j)+" : "+str(value))
 			else:
 				delta = math.pow(j/float(num_instances-1),2.0)
-				#print(delta)
 				value, network = run_sim(all_data,parent=best_of_all,percent_d=delta)
+				print(str(delta)+" : "+str(value))
 			if value > best_of_gen_val:
 				best_of_gen_val = value
 				best_of_gen = network
+		print("BEST OF GENERATION: "+ str(best_of_gen_val))
+		#value, test_bot = run_sim(all_data, parent=best_of_gen, percent_d=0)
+		#print("CALCULATED BoG: "+ str(value))
 		if best_of_gen_val > best_of_all_val:
+			#print("BEST_OF_GEN_VAL: "+str(best_of_gen_val)+" BEST_OF_ALL_VAL: "+str(best_of_all_val))
 			best_of_all_val = best_of_gen_val
 			best_of_all = best_of_gen
 		print("GEN "+str(i)+": "+str(best_of_gen_val))
+	#best_of_all.write_config("boa.conf")
 	return best_of_all_val, best_of_all
+
 
 '''
 def train_deprecated(data_csv, num_instances, num_generations, config_file = None):
@@ -230,29 +243,80 @@ def train_deprecated(data_csv, num_instances, num_generations, config_file = Non
 	return best_of_all_val, best_of_all
 '''
 
+
+def train_rewrite(data_csvs, num_instances, num_gens, config_file=None):
+	# Function: Trains the neural net via test_data
+	# Inputs:
+	# 	data_csvs: array of filenames with training data
+	# 	num_instances: number of nets to test per generation
+	# 	num_gens: the number of generations to run the test for
+	# 	config_file (OPTIONAL): configuration file to start the training with
+	path_to_price_files = "../dogecoin_price_history/"
+	all_data = []
+	for data_csv in data_csvs:
+		f = open(path_to_price_files+data_csv)
+		data = f.read()
+		f.close()
+		all_data.append(data)
+	all_net = Bot()
+	all_val = -100000
+	if config_file is not None:
+		all_val, all_net = run_sim(all_data, config_file=config_file)
+	print("STARTING UP: "+str(all_val))
+	inst_val, inst_net = 0.0, Bot()
+	for gen in range(num_gens):
+		gen_net = Bot()
+		gen_val = -10000000
+		for instance in range(num_instances):
+			if all_val < 0:
+				inst_val, inst_net = run_sim(all_data)
+				print("all_val < 0: " + str(inst_val) + " ")
+			else:
+				delta = math.pow(instance/float(num_instances-1),2.0)
+				inst_val, inst_net = run_sim(all_data, parent=all_net, percent_d=delta)
+			if inst_val > gen_val:
+				gen_val = inst_val
+				gen_net = inst_net
+		print("BEST_OF_GEN_"+str(gen)+": "+str(gen_val))
+		gen_net.write_config("gen_"+str(gen)+".csv")
+		if gen_val >= all_val:
+			#print("BEST_OF_GEN_VAL: "+str(gen_val)+" BEST_OF_ALL_VAL: "+str(all_val))
+			all_val = gen_val
+			all_net = gen_net
+	print("BEST_OF_ALL: "+str(all_val))
+	return all_val, all_net
+
+
 def run_sim(data, config_file = None, parent = None, percent_d = None):
 	buys = []
 	sells = []
 	doge_wallet = 0.0
 	money = 100.00
+	last_money = money
+	last_interaction_price = 0.0
 	if parent is not None:
 		assert(percent_d is not None)
 		net = Bot(parent=parent, percent_d=percent_d)
-	else:
+	elif config_file is not None:
 		net = Bot(config_filename=config_file)
+	else:
+		net = Bot()
 	data_entry = 0
+	first = True
 	for single_data in data:
 		all_data = single_data.split("\n")
-		#print(all_data)
 		times = []
 		prices = []
-		have_doge = False
-		bought_price = 0.00
+		#have_doge = False
+		#bought_price = 0.00
 		for data_slice in all_data:
 			if data_slice != "":
 				slice_pieces = data_slice.split(",")
 				time = float(slice_pieces[0])
 				price = float(slice_pieces[1])
+				if first:
+					last_interaction_price = price
+					first = False
 				times[:0] = [time]
 				prices[:0] = [price]
 				times = times[:10]
@@ -267,33 +331,40 @@ def run_sim(data, config_file = None, parent = None, percent_d = None):
 					'''
 					#print(prices)
 					#print(times)
-					data.append(calc_slope(times[:3],prices[:3])) # Slope, 1
-					data.append(calc_curl(times[:3],prices[:3])) # Curl, 2
+					#data.append(calc_slope(times[:3],prices[:3])*10e4) # Slope, 0
+					#data.append(calc_curl(times[:3],prices[:3])*10e5) # Curl, 1
 					sum = 0.0
 					for x in prices:
 						sum += x
-					average = sum/(times[0]-times[9])
-					data.append(average) # Average, 3
-					data.append(calc_slope(times,prices)) # Momentum, 4
-					data.append(calc_curl(times,prices)) # Delta Momentum, 5
+					average = sum/10.0
+					data.append((prices[0] - average)/float(prices[0])) # Perc_from_Average, 2
+					data.append((prices[0]-last_interaction_price)/float(last_interaction_price)) # Dist from last interact price, 2
+					data.append(calc_slope(times,prices)*10e5) # Momentum, 3
+					data.append(calc_curl(times,prices)*10e6) # Delta Momentum, 4
+					#print(data)
 					net.feed_data(data)
 					net.propagate()
 					output = net.determine_output()
 					if output == 0:
-						if (doge_wallet < 11.00):
+						if (money > 50.00):
+							last_interaction_price = prices[0]
 							doge_delta = math.floor((money*.95)/prices[0])
 							#doge_delta = (money*.95)/prices[0]
 							doge_wallet += doge_delta
+							last_money = money
 							money -= calc_dues(float(doge_delta)*prices[0], net.fees, True)
 							hit = [(86400.00*data_entry)+time,price]
 							buys.append(hit)
 					elif output == 2:
-						if (doge_wallet > 0.0):
+						if (doge_wallet > 50):
+							last_interaction_price = prices[0]
 							doge_delta = doge_wallet
 							doge_wallet = 0
 							hit = [(86400.00*data_entry)+time,price]
 							money += calc_dues(float(doge_delta)*prices[0], net.fees, False)
+							last_money = money
 							sells.append(hit)
+			
 		data_entry += 1
 	doge_delta = doge_wallet
 	doge_wallet = 0
@@ -301,18 +372,81 @@ def run_sim(data, config_file = None, parent = None, percent_d = None):
 	#print(money)
 	decisions = [buys,sells]
 	net.set_history(decisions)
-	return money, net
+	return last_money, net
 
 
-def test():
-	pass
+def run_real(EXCHANGE, coin, coin_label, balance_file, minimum_crypto, config_file=None):
+	buys = []
+	sells = []
+	times = []
+	prices = []
+	CS_OBJ = CS.CoinStats(coin)
+	history_ext = "../histories"
+	buy_file = "buy_"+str(CS_OBJ.day_no)+".csv"
+	sell_file = "sell_"+str(CS_OBJ.day_no)+".csv"
+	net = Bot(config_filename=config_file)
+	last_interaction_price = 0.0
+	first = True
+	while True:
+		if CS_OBJ.check_price():
+			c_price = CS_OBJ.last_price
+			c_time = CS_OBJ.last_time
+			if first:
+					last_interaction_price = c_price
+					first = False
+			prices[:0] = [c_price]
+			times[:0] = [c_time]
+			prices = prices[:10]
+			times = times[:10]
+			if len(times) == 10:
+				data = []
+				#print(prices)
+				#print(times)
+				#data.append(calc_slope(times[:3],prices[:3])*10e4) # Slope, 0
+				#data.append(calc_curl(times[:3],prices[:3])*10e5) # Curl, 1
+				sum = 0.0
+				for x in prices:
+					sum += x
+				average = sum/10.0
+				data.append((prices[0] - average)/float(prices[0])) # Perc_from_Average, 2
+				data.append((prices[0]-last_interaction_price)/float(last_interaction_price)) # Dist from last interact price, 2
+				data.append(calc_slope(times,prices)*10e5) # Momentum, 3
+				data.append(calc_curl(times,prices)*10e6) # Delta Momentum, 4
+				#print(data)
+				net.feed_data(data)
+				net.propagate()
+				output = net.determine_output()
+				if output == 0:
+					money = EXCHANGE.default_balances["USD"]
+					useable_funds = round((money*.99),2)
+					if (useable_funds/float(prices[0]) > minimum_crypto):
+						#hit = [time,price]
+						#buys.append(hit)
+						EXCHANGE.create_trade("USD",coin_label,useable_funds)
+						wait_for_confirmation(EXCHANGE)
+						EXCHANGE.save_balance(balance_file)
+						print(EXCHANGE.default_balances)
+						
+				elif output == 2:
+					crypto_wallet = EXCHANGE.default_balances[coin_label]
+					useable_crypto = round(crypto_wallet*.99,4)
+					if (useable_crypto > minimum_crypto):
+						#hit = [time,price]
+						#sells.append(hit)
+						EXCHANGE.create_trade(coin_label,"USD",useable_crypto)
+						wait_for_confirmation(EXCHANGE)
+						EXCHANGE.save_balance(balance_file)
+						print(EXCHANGE.default_balances)
 
-
-def run_real(config_file=None):
-	pass
+		time.sleep(1)
 
 
 # More Helper Functions
+def wait_for_confirmation(EXCHANGE):
+	while not EXCHANGE.check_trades():
+		time.sleep(1)
+
+
 def calc_slope(times, prices):
 	sum = 0.0
 	for i in range(len(times)-1):

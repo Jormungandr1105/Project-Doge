@@ -4,13 +4,29 @@ import time
 
 
 # First Pass
+def make_trade(exchange, fromSymbol, toSymbol, amt_from):
+	#cont = exchange.check_conversion(fromSymbol, toSymbol)
+	cont = True
+	if cont:
+		#print("Trading Pair Exists!")
+		exchange.create_trade(fromSymbol,toSymbol,amt_from)
+		exchange.current_trades
+		while(len(exchange.current_trades)>0):
+			print(exchange.check_trades())
+			time.sleep(1)
+
+	else:
+		print("Pair Doesn't Exist")
+		return False
 
 
 if __name__ == '__main__':
-	key_file = "../template_keys.json"
-	user_file = "../template_users.json"
+	key_file = "../keys.json"
+	user_file = "../users.json"
 	user = "user0"
 	user_data = ex.get_user_info(user_file,user)
 	shrimp_keys = ex.get_shrimpy_keys(key_file)
-	exchange = ex.Exchange(shrimp_keys, user_data, "...")
-	exchange.print_useful_info()
+	exchange = ex.Exchange(shrimp_keys, user_data)
+	#exchange.print_useful_info()
+	make_trade(exchange,"XBT","USD", .00043)
+	

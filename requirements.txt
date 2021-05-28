@@ -1,3 +1,4 @@
 shrimpy-python
 matplotlib
-json
+pycoingecko
+mpi4py

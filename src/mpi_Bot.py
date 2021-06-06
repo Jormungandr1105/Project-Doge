@@ -19,6 +19,7 @@ def mpi_train(rank, size, data_csvs, num_instances, num_gens, coin, minimum_cryp
 	#		all_net: the best net generated
 	##############################################################################
 	path_to_price_files = "../{}_price_history/".format(coin)
+	comm = MPI.COMM_WORLD
 	all_data = []
 	for data_csv in data_csvs:
 		f = open(path_to_price_files+data_csv)
@@ -41,18 +42,20 @@ def mpi_train(rank, size, data_csvs, num_instances, num_gens, coin, minimum_cryp
 		else:
 			data = None
 		data = comm.bcast(data, root=0)
+		comm.barrier()
 		all_val, all_net = data[0], data[1]
 		for instance in range(math.floor(num_instances/(size))):
 			if all_val <= 100.0:
 				inst_val, inst_net = run_sim(all_data, minimum_crypto, fees=fees)
 			else:
-				delta = math.pow((rank*math.floor(num_instances/size)+instance)/float(num_instances-1),2.0)
+				delta = math.pow((math.floor(num_instances/size)+instance)/float(num_instances-1),2.0)
 				mod = math.sqrt(lvl)
 				inst_val, inst_net = run_sim(all_data, minimum_crypto, parent=all_net, percent_d=delta*mod, fees=fees)
 			if inst_val > gen_val:
 				gen_val = inst_val
 				gen_net = inst_net
 		best = [gen_val, gen_net]
+		comm.barrier()
 		new_data = comm.gather(best, root=0)
 		if rank == 0:
 			prev_val = all_val
@@ -65,6 +68,7 @@ def mpi_train(rank, size, data_csvs, num_instances, num_gens, coin, minimum_cryp
 			else:
 				lvl += 1.0
 			print("BEST_OF_GEN_{}: ".format(gen)+str(all_val))
+	comm.barrier()
 	if rank == 0:
 		print("BEST_OF_ALL: "+str(all_val))
 		return all_val, all_net
@@ -140,8 +144,8 @@ def mpi_run_sim(data, minimum_crypto, config_file=None, parent=None, percent_d=N
 	return money, net
 
 
-b_train = ["131.csv","132.csv","133.csv","134.csv","135.csv"]
-b_tests = ["136.csv"]
+b_train = ["131.csv","132.csv","133.csv","134.csv","135.csv", "136.csv", "137.csv", "138.csv", "139.csv", "140.csv", "141.csv", "142.csv"]
+b_tests = ["143.csv", "144.csv", "145.csv"]
 b_all = ["130.csv","131.csv","132.csv","133.csv","134.csv","135.csv","136.csv"]
 
 
@@ -149,7 +153,7 @@ if __name__ == '__main__':
 	comm = MPI.COMM_WORLD
 	rank = comm.Get_rank()
 	size = comm.Get_size()
-	config_save = "bit_4py_3.conf"
-	val, bot = mpi_train(rank, size, b_train, 10000, 10, "bitcoin", .0001, fees=.0026)
+	config_save = "bit_4py0.conf"
+	val, bot = mpi_train(rank, size, b_train, 100, 10, "bitcoin", .0001, fees=.0026)
 	if rank == 0:
 		bot.write_config(config_save)

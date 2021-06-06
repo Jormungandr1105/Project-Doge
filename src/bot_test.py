@@ -63,9 +63,9 @@ basic_training = ["127.csv"]
 kinda_stable = ["124.csv","125.csv","126.csv","127.csv"]
 all_csvs = ["105.csv","106.csv","107.csv","108.csv","109.csv","110.csv","121.csv","122.csv","123.csv","124.csv","125.csv","126.csv","127.csv","128.csv","129.csv","130.csv"]
 big_loss = ["128.csv","129.csv","130.csv"]
-b_train = ["131.csv","132.csv","133.csv","134.csv"]
-b_tests = ["135.csv"]
-b_all = ["130.csv","131.csv","132.csv","133.csv","134.csv","135.csv","136.csv"]
+b_train = ["131.csv","132.csv","133.csv","134.csv","135.csv", "136.csv", "137.csv", "138.csv", "139.csv", "140.csv", "141.csv", "142.csv"]
+b_tests = ["143.csv", "144.csv", "145.csv"]
+b_all = ["130.csv","131.csv","132.csv","133.csv","134.csv","135.csv","136.csv", "137.csv", "138.csv", "139.csv", "140.csv", "141.csv", "142.csv", "143.csv", "144.csv", "145.csv"]
 
 
 histories_ext = "../histories/"
@@ -74,7 +74,7 @@ histories_ext = "../histories/"
 if __name__ == "__main__":
 	####### RUN CONFIGS ##########################################################
 	read_from_config=None
-	write_to_config="bit_4py_3.conf"
+	write_to_config="bit_4py.conf"
 	coin = "bitcoin"
 	minimum_crypto = .0001
 	fees = .0026

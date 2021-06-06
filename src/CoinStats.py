@@ -4,7 +4,10 @@ import math
 import csv
 import sys
 # My files
-import plot
+try:
+	import plot
+except ModuleNotFoundError:
+	pass
 
 class CoinStats():
 

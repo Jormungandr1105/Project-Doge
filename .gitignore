@@ -11,10 +11,10 @@
 GET_practice/*
 temp_file_storage/*
 
-# Leave the Price History Out of It
-dogecoin_price_history/*
-ethereum_price_history/*
-bitcoin_price_history/*
+# Leave the Price History In for Dev Branch
+!dogecoin_price_history/*
+!ethereum_price_history/*
+!bitcoin_price_history/*
 # But leave an example of each behind
 !dogecoin_price_history/124.csv
 !ethereum_price_history/124.csv

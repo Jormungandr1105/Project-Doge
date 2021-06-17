@@ -1,5 +1,9 @@
 import shrimpy
 import json
+import time
+
+
+title_card_file = "../jsons/title_block.txt"
 
 
 class Exchange():
@@ -47,24 +51,48 @@ class Exchange():
 		self.accounts = self.client.list_accounts(self.user_id)
 
 	def print_useful_info(self):
+		f = open(title_card_file,"r")
+		title_text = f.read()
+		title_data = title_text.split("\n")
 		print("#"*80)
+		time.sleep(.1)
+		for x in title_data:
+			self.print_bracketed(x)
+			time.sleep(.2)
+		time.sleep(.2)
+		print("#"*80)
+		time.sleep(.2)
 		print("# EXCHANGE INFORMATION #"+"#"*56)
+		time.sleep(.2)
 		print("#"*80)
-		print("# USERNAME: "+self.username)
-		print("# USER_ID: "+self.user_id)
+		time.sleep(.2)
+		self.print_bracketed(" USERNAME: "+self.username)
+		time.sleep(.2)
+		self.print_bracketed(" USER_ID: "+self.user_id)
+		time.sleep(.2)
 		print("#"+" "*78+"#")
-		print("# DEFAULT_EXCHANGE_NAME: "+str(self.default_account_name))
-		print("# DEFAULT_EXCHANGE_ID: "+str(self.default_account_id)+"\n#")
-		#for set in self.default_trading_pairs:
-			#print("# "+set["baseTradingSymbol"]+" --> "+set["quoteTradingSymbol"])
+		time.sleep(.2)
+		self.print_bracketed(" DEFAULT_EXCHANGE_NAME: "+str(self.default_account_name))
+		time.sleep(.2)
+		self.print_bracketed(" DEFAULT_EXCHANGE_ID: "+str(self.default_account_id))
+		time.sleep(.2)
+		print("#"+" "*78+"#")
+		time.sleep(.2)
 		print("# EXCHANGES: "+" "*66+"#\n"+"#"*80)
+		time.sleep(.2)
 		for account in self.accounts:
-			print("# EXCHANGE_NAME: "+account["exchange"])
-			print("# EXCHANGE_ID: "+str(account["id"]))
+			self.print_bracketed(" EXCHANGE_NAME: "+account["exchange"])
+			time.sleep(.2)
+			self.print_bracketed(" EXCHANGE_ID: "+str(account["id"]))
+			time.sleep(.2)
 			balance = self.get_balance(account["id"])
 			for crypto in balance:
-				print("## "+str(crypto)+": "+str(balance[crypto]))
+				self.print_bracketed("# "+str(crypto)+": "+str(balance[crypto]))
+				time.sleep(.1)
 			print("#"*80)
+
+	def print_bracketed(self, string):
+		print("#"+string+"."*(78-len(string))+"#")
 
 	def get_balance(self, account_id=None):
 		current_balances  = {}
@@ -87,23 +115,24 @@ class Exchange():
 	def create_trade(self,from_symbol,to_symbol,amt):
 		# AMT is amount of FROM_SYMBOL
 		trade_response = self.client.create_trade(self.user_id,self.default_account_id,from_symbol,to_symbol,amt)
-		#print(trade_response)
-		print(trade_response["id"])
-		self.current_trades.append(trade_response["id"])
+		try:
+			print(trade_response["id"])
+			self.current_trades.append(trade_response["id"])
+		except KeyError:
+			print('["id"] key error')
+			print(trade_response)
+			self.get_balance()
 
 	def check_trades(self):
-		# Check in on ongoing trades, chnage balances when completed
+		# Check in on ongoing trades, change balances when completed
 		for trade in self.current_trades:
 			response = self.client.get_trade_status(self.user_id,self.default_account_id, trade)
 			if (response["trade"]["status"] == "completed" and response["trade"]["success"] == True):
-				for change in response["changes"]:
-					if change["symbol"] in self.default_balances:
-						self.default_balances[change["symbol"]] = self.default_balances[change["symbol"]] + float(change["nativeValue"])
-					else:
-						self.default_balances[change["symbol"]] = float(change["nativeValue"])
+				self.get_balance()
 				self.current_trades.remove(trade)
 			elif (response["trade"]["status"] == "completed" and response["trade"]["success"] == False):
 				print("Trade Failed")
+				self.current_trades.remove(trade)
 		return len(self.current_trades) == 0
 
 

@@ -1,5 +1,6 @@
 from mpi4py import MPI
 from Bot import *
+import bot_test
 
 
 def mpi_train(rank, size, data_csvs, num_instances, num_gens, coin, minimum_crypto, config_file=None, fees=None):
@@ -26,7 +27,7 @@ def mpi_train(rank, size, data_csvs, num_instances, num_gens, coin, minimum_cryp
 		data = f.read()
 		f.close()
 		all_data.append(data)
-	all_net = None
+	all_net = Bot()
 	all_val = -100000
 	if rank == 0:
 		if config_file is not None:
@@ -48,7 +49,7 @@ def mpi_train(rank, size, data_csvs, num_instances, num_gens, coin, minimum_cryp
 			if all_val <= 100.0:
 				inst_val, inst_net = run_sim(all_data, minimum_crypto, fees=fees)
 			else:
-				delta = math.pow((math.floor(num_instances/size)+instance)/float(num_instances-1),2.0)
+				delta = math.pow((rank*math.floor(num_instances/size)+instance)/float(num_instances-1),2.0)
 				mod = math.sqrt(lvl)
 				inst_val, inst_net = run_sim(all_data, minimum_crypto, parent=all_net, percent_d=delta*mod, fees=fees)
 			if inst_val > gen_val:
@@ -71,14 +72,15 @@ def mpi_train(rank, size, data_csvs, num_instances, num_gens, coin, minimum_cryp
 	comm.barrier()
 	if rank == 0:
 		print("BEST_OF_ALL: "+str(all_val))
+		print(run_sim(all_data, minimum_crypto, parent=all_net, percent_d=0, fees=fees)[0])
 		return all_val, all_net
 	else:
 		return None, None
 
 
 def mpi_run_sim(data, minimum_crypto, config_file=None, parent=None, percent_d=None, fees=None):
-	max_d = 48
-	approx = 8
+	max_d = 24
+	approx =4
 	buys = []
 	sells = []
 	crypto_wallet = 0.0
@@ -124,7 +126,7 @@ def mpi_run_sim(data, minimum_crypto, config_file=None, parent=None, percent_d=N
 					net.propagate()
 					output = net.determine_output()
 					if output == 0:
-						if ((money*.98)/float(prices[0]) > minimum_crypto):
+						if (money/float(prices[0]) > minimum_crypto):
 							crypto_delta = round((money*.98)/prices[0],8)
 							crypto_wallet += crypto_delta
 							money -= calc_dues(float(crypto_delta)*prices[0], net.fees, True)
@@ -144,9 +146,15 @@ def mpi_run_sim(data, minimum_crypto, config_file=None, parent=None, percent_d=N
 	return money, net
 
 
-b_train = ["131.csv","132.csv","133.csv","134.csv","135.csv", "136.csv", "137.csv", "138.csv", "139.csv", "140.csv", "141.csv", "142.csv"]
-b_tests = ["143.csv", "144.csv", "145.csv"]
-b_all = ["130.csv","131.csv","132.csv","133.csv","134.csv","135.csv","136.csv"]
+b_train = ["131.csv","132.csv","133.csv","134.csv","135.csv", "136.csv", "137.csv", "138.csv", "139.csv", "140.csv", "141.csv", "142.csv", "143.csv", 
+"144.csv", "145.csv", "146.csv", "147.csv", "148.csv", "149.csv", "150.csv", 
+"151.csv", "152.csv", "153.csv", "154.csv", "155.csv"]
+b_tests = ["156.csv", "157.csv", "158.csv", "159.csv", "160.csv", "161.csv"]
+b_all = ["131.csv","132.csv","133.csv","134.csv","135.csv", "136.csv", 
+"137.csv", "138.csv", "139.csv", "140.csv", "141.csv", "142.csv", "143.csv", 
+"144.csv", "145.csv", "146.csv", "147.csv", "148.csv", "149.csv", "150.csv", 
+"151.csv", "152.csv", "153.csv", "154.csv", "155.csv", "156.csv", "157.csv",
+"158.csv", "159.csv", "160.csv", "161.csv"]
 
 
 if __name__ == '__main__':
@@ -154,6 +162,6 @@ if __name__ == '__main__':
 	rank = comm.Get_rank()
 	size = comm.Get_size()
 	config_save = "bit_4py0.conf"
-	val, bot = mpi_train(rank, size, b_train, 100, 10, "bitcoin", .0001, fees=.0026)
+	val, bot = mpi_train(rank, size, b_train, 1000, 10, "bitcoin", .0001, fees=.0026)
 	if rank == 0:
 		bot.write_config(config_save)

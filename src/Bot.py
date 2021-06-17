@@ -342,6 +342,9 @@ def run_sim(data, minimum_crypto, config_file=None, parent=None, percent_d=None,
 
 
 def run_real(EXCHANGE, coin, coin_label, balance_file, minimum_crypto, config_file=None):
+	max_d = 24
+	approx = 4
+	check_val = 30
 	buys = []
 	sells = []
 	times = []
@@ -353,6 +356,7 @@ def run_real(EXCHANGE, coin, coin_label, balance_file, minimum_crypto, config_fi
 	net = Bot(config_filename=config_file)
 	last_interaction_price = 0.0
 	first = True
+	current_check_val = 0
 	while True:
 		if CS_OBJ.check_price():
 			c_price = CS_OBJ.last_price
@@ -362,29 +366,34 @@ def run_real(EXCHANGE, coin, coin_label, balance_file, minimum_crypto, config_fi
 					first = False
 			prices[:0] = [c_price]
 			times[:0] = [c_time]
-			prices = prices[:10]
-			times = times[:10]
-			if len(times) == 10:
+			times = times[:max_d]
+			prices = prices[:max_d]
+			if len(times) == max_d:
 				data = []
-				#print(prices)
-				#print(times)
-				data.append(calc_slope(times[:3],prices[:3])*10e4) # Slope, 0
-				data.append(calc_curl(times[:3],prices[:3])*10e5) # Curl, 1
 				sum = 0.0
 				for x in prices:
 					sum += x
-				average = sum/10.0
-				data.append((prices[0] - average)/float(prices[0])) # Perc_from_Average, 2
-				#data.append((prices[0]-last_interaction_price)/float(last_interaction_price)) # Dist from last interact price, 2
-				data.append(calc_slope(times,prices)*10e5) # Momentum, 3
-				data.append(calc_curl(times,prices)*10e6) # Delta Momentum, 4
+				average = sum/float(max_d)
+				approx_prices = []
+				approx_times = []
+				i = 0
+				while i < len(prices): # Averaging groups of prices/times
+					approx_prices.append(avg(prices[i:min(i+approx,len(prices))]))
+					approx_times.append(avg(times[i:min(i+approx,len(times))]))
+					i+=approx
+				sz = math.floor(len(approx_prices)/2.0)
+				data.append(calc_slope(approx_times[:sz], approx_prices[:sz]))
+				data.append(calc_curl(approx_times[:sz], approx_prices[:sz]))
+				data.append(calc_slope(approx_times, approx_prices))
+				data.append(calc_curl(approx_times, approx_prices))
+				data.append((prices[0]-approx_prices[0])/prices[0])
 				#print(data)
 				net.feed_data(data)
 				net.propagate()
 				output = net.determine_output()
 				if output == 0:
 					money = EXCHANGE.default_balances["USD"]
-					useable_funds = round((money*.99),2)
+					useable_funds = trunc_after_dec(money,2)
 					if (useable_funds/float(prices[0]) > minimum_crypto):
 						last_interaction_price = prices[0]
 						#hit = [time,price]
@@ -396,7 +405,7 @@ def run_real(EXCHANGE, coin, coin_label, balance_file, minimum_crypto, config_fi
 						
 				elif output == 2:
 					crypto_wallet = EXCHANGE.default_balances[coin_label]
-					useable_crypto = round(crypto_wallet*.99,4)
+					useable_crypto = trunc_after_dec(crypto_wallet,8)
 					if (useable_crypto > minimum_crypto):
 						last_interaction_price = prices[0]
 						#hit = [time,price]
@@ -406,13 +415,28 @@ def run_real(EXCHANGE, coin, coin_label, balance_file, minimum_crypto, config_fi
 						EXCHANGE.save_balance(balance_file)
 						print(EXCHANGE.default_balances)
 
-		time.sleep(1)
+			if current_check_val >= check_val:
+				EXCHANGE.get_balance()
+				current_check_val = 0
+			current_check_val += 1
+		time.sleep(2)
 
 
 # More Helper Functions
 def wait_for_confirmation(EXCHANGE):
 	while not EXCHANGE.check_trades():
-		time.sleep(1)
+		time.sleep(6)
+
+
+def trunc_after_dec(number, after_dec):
+	str_num = str(number)
+	dot_index = str_num.find(".")
+	if dot_index == -1:
+		return number
+	else:
+		max_index = min(dot_index+after_dec+1, len(str_num))
+		str_num = str_num[:max_index]
+		return float(str_num)
 
 
 def avg(prices):

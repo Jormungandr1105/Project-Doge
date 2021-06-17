@@ -7,9 +7,9 @@ import json
 
 
 def setup():
-	key_file = "../keys.json"
-	user_file = "../users.json"
-	balance_file = "../exchange_balance.json"
+	key_file = "../jsons/keys.json"
+	user_file = "../jsons/users.json"
+	balance_file = "../jsons/exchange_balance.json"
 	user = "user0"
 	user_data = ex.get_user_info(user_file,user)
 	shrimp_keys = ex.get_shrimpy_keys(key_file)
@@ -21,9 +21,9 @@ def setup():
 
 def main():
 	EXCHANGE = setup()
-	config_file = "best_fees_0052.conf"
-	minimum_crypto = 50
-	Bot.run_real(EXCHANGE, "dogecoin", "XDG", "../exchange_balance.json", minimum_crypto, config_file=config_file)
+	config_file = "bitcoin_best.conf"
+	minimum_crypto = 0.0001
+	Bot.run_real(EXCHANGE, "bitcoin", "XBT", "../jsons/exchange_balance.json", minimum_crypto, config_file=config_file)
 
 
 if __name__ == '__main__':

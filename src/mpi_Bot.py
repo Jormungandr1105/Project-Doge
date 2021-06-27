@@ -162,6 +162,6 @@ if __name__ == '__main__':
 	rank = comm.Get_rank()
 	size = comm.Get_size()
 	config_save = "bit_4py0.conf"
-	val, bot = mpi_train(rank, size, b_train, 1000, 10, "bitcoin", .0001, fees=.0026)
+	val, bot = mpi_train(rank, size, b_train, 10000, 25, "bitcoin", .0001, fees=.0026)
 	if rank == 0:
 		bot.write_config(config_save)

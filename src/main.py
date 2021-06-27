@@ -21,7 +21,7 @@ def setup():
 
 def main():
 	EXCHANGE = setup()
-	config_file = "bitcoin_best.conf"
+	config_file = "bit_4py0.conf"
 	minimum_crypto = 0.0001
 	Bot.run_real(EXCHANGE, "bitcoin", "XBT", "../jsons/exchange_balance.json", minimum_crypto, config_file=config_file)
 

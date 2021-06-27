@@ -1,0 +1,69 @@
+def run_sim(data, minimum_crypto, config_file=None, parent=None, percent_d=None, fees=None):
+	max_d = 48
+	approx = 8
+	buys = []
+	sells = []
+	crypto_wallet = 0.0
+	money = 100.00
+	num_inputs = 5
+	if parent is not None:
+		assert(percent_d is not None)
+		net = Bot(parent=parent, percent_d=percent_d, fees=fees, inputs=num_inputs)
+	elif config_file is not None:
+		net = Bot(config_filename=config_file, fees=fees, inputs=num_inputs)
+	else:
+		net = Bot(fees=fees, inputs=num_inputs)
+	data_entry = 0
+	for single_data in data:
+		all_data = single_data.split("\n")
+		times = []
+		prices = []
+		for data_slice in all_data:
+			if data_slice != "":
+				slice_pieces = data_slice.split(",")
+				time = float(slice_pieces[0])
+				price = float(slice_pieces[1])
+				times[:0] = [time]
+				prices[:0] = [price]
+				times = times[:max_d]
+				prices = prices[:max_d]
+				if len(times) == max_d:
+					data = []
+					approx_prices = []
+					approx_times = []
+					i = 0
+					while i < len(prices):
+						approx_prices.append(avg(prices[i:min(i+approx,len(prices))]))
+						approx_times.append(avg(times[i:min(i+approx,len(times))]))
+						i+=approx
+					sz = math.floor(len(approx_prices)/2.0)
+					data.append(calc_slope(approx_times[:sz], approx_prices[:sz]))
+					data.append(calc_curl(approx_times[:sz], approx_prices[:sz]))
+					data.append(calc_slope(approx_times, approx_prices))
+					data.append(calc_curl(approx_times, approx_prices))
+					data.append((prices[0]-approx_prices[0])/prices[0])
+					net.feed_data(data)
+					net.propagate()
+					output = net.determine_output()
+					if output == 0:
+						if ((money*.98)/float(prices[0]) > minimum_crypto):
+							crypto_delta = round((money*.98)/prices[0],8)
+							crypto_wallet += crypto_delta
+							money -= calc_dues(float(crypto_delta)*prices[0], net.fees, True)
+							hit = [(86400.00*data_entry)+time,price]
+							buys.append(hit)
+					elif output == 2:
+						if (crypto_wallet > minimum_crypto):
+							crypto_delta = crypto_wallet
+							crypto_wallet = 0
+							hit = [(86400.00*data_entry)+time,price]
+							money += calc_dues(float(crypto_delta)*prices[0], net.fees, False)
+							sells.append(hit)
+			
+		data_entry += 1
+	crypto_delta = crypto_wallet
+	crypto_wallet = 0
+	money += (float(crypto_delta)*prices[0])
+	decisions = [buys,sells]
+	net.set_history(decisions)
+	return money, net

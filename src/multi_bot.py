@@ -3,37 +3,41 @@ import plot
 
 class MultiBot():
 
-	loss = .0026
 	filename = "../log.txt"
+	conv_cost = .0020
+	max_d = 10
 
-	def __init__(self, coins):
+	def __init__(self, coins, loss = 0.0026):
 		self.coins = coins
 		self.money = 0.00
+		self.loss = loss
 		f = open(self.filename, "w+")
 		f.write("")
 		f.close()
 
 	def run_sim(self,prices,percentages,perc_avgs):
-		markup = .01
+		markup = 2*self.loss+.005
 		current_prices = [0.0 for _ in range(len(prices))]
-		current_percentages = [0.0 for _ in range(len(prices))]
+		self.current_percentages = [0.0 for _ in range(len(prices))]
+		self.avg_percs = []
 		for x in range(len(percentages[0])-1):
 			for i in range(len(percentages)):
 				current_prices[i] = prices[i][x+1]
-				current_percentages[i] = percentages[i][x]
-			if x == 0:
+				self.current_percentages[i] = percentages[i][x]
+				self.avg_percs[:0] = [perc_avgs[x]]
+				self.avg_percs = self.avg_percs[:self.max_d]
+			if x == 0: # First Pass
 				print(self.get_worth(current_prices))
 				self.log(current_prices)
-			ordered_indexes = sort(current_percentages)
-			#print(ordered_indexes)
-			#print(percentages[ordered_indexes[0]][x])
-			#print(percentages[ordered])
+			ordered_indexes = sort(self.current_percentages)
+			
 			changed = False
 			j = 0
-			while (current_percentages[ordered_indexes[j]] > current_percentages[ordered_indexes[len(current_percentages)-1]]+ markup):
+			while (self.current_percentages[ordered_indexes[j]] > self.current_percentages[ordered_indexes[len(self.current_percentages)-1]]+ markup):
 				if (self.buy(ordered_indexes[j],ordered_indexes[len(percentages)-1], current_prices)):
 					changed = True
 				j += 1
+			# Let me know
 			if changed:
 				self.log(current_prices)
 		for coin in self.coins:
@@ -41,10 +45,10 @@ class MultiBot():
 		print(self.get_worth(current_prices))
 
 	def buy(self, from_index, to_index, current_prices):
-		worth = current_prices[from_index] * self.coins[from_index][1] * 1
+		worth = current_prices[from_index] * self.coins[from_index][1] 
 		if worth > 5.00:
-			self.coins[from_index][1] *= 0
-			self.coins[to_index][1] += worth / current_prices[to_index]
+			self.coins[from_index][1] = 0
+			self.coins[to_index][1] += (worth / current_prices[to_index]) * (1-self.loss)
 			return True
 		return False
 
@@ -56,14 +60,14 @@ class MultiBot():
 
 	def cash_out(self, current_prices, from_index):
 		if current_prices[from_index] * self.coins[from_index][1] > 5.00:
-			self.money += current_prices[from_index] * self.coins[from_index][1] * (1-2*self.loss)
+			self.money += current_prices[from_index] * self.coins[from_index][1] * (1-self.conv_cost)
 			self.coins[from_index][1] = 0.0
 			return True
 		return False
 
 	def cash_in(self, current_prices, index):
 		if self.money > 5.00:
-			self.coins[index][1] += (self.money / current_prices[index]) * (1-self.loss)
+			self.coins[index][1] += (self.money / current_prices[index]) * (1-self.conv_cost)
 			self.money = 0.00
 			return True
 		return False

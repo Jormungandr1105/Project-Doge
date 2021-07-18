@@ -19,6 +19,17 @@ def plot_coin_history():
 	stats_obj.plot_data(csv_file)
 
 
+coin_files_list = []
+coin_files_list.append(["../bitcoin_price_history/167.csv", "../bitcoin_price_history/168.csv", "../bitcoin_price_history/169.csv", "../bitcoin_price_history/170.csv", "../bitcoin_price_history/171.csv", "../bitcoin_price_history/172.csv"])
+coin_files_list.append(["../dogecoin_price_history/167.csv", "../dogecoin_price_history/168.csv", "../dogecoin_price_history/169.csv", "../dogecoin_price_history/170.csv", "../dogecoin_price_history/171.csv", "../dogecoin_price_history/172.csv"])
+coin_files_list.append(["../ethereum_price_history/167.csv", "../ethereum_price_history/168.csv", "../ethereum_price_history/169.csv", "../ethereum_price_history/170.csv", "../ethereum_price_history/171.csv", "../ethereum_price_history/172.csv"])
+coin_files_list.append(["../kusama_price_history/167.csv", "../kusama_price_history/168.csv", "../kusama_price_history/169.csv", "../kusama_price_history/170.csv", "../kusama_price_history/171.csv", "../kusama_price_history/172.csv"])
+coin_files_list.append(["../litecoin_price_history/167.csv", "../litecoin_price_history/168.csv", "../litecoin_price_history/169.csv", "../litecoin_price_history/170.csv", "../litecoin_price_history/171.csv", "../litecoin_price_history/172.csv"])
+coin_files_list.append(["../polkadot_price_history/167.csv", "../polkadot_price_history/168.csv", "../polkadot_price_history/169.csv", "../polkadot_price_history/170.csv", "../polkadot_price_history/171.csv", "../polkadot_price_history/172.csv"])
+coin_files_list.append(["../tron_price_history/167.csv", "../tron_price_history/168.csv", "../tron_price_history/169.csv", "../tron_price_history/170.csv", "../tron_price_history/171.csv", "../tron_price_history/172.csv"])
+
 
 if __name__ == '__main__':
-	plot_buy_sell()
+	#plot_buy_sell()
+	datasets = plot.setup_multiplot(coin_files_list)
+	plot.multi_plot(datasets, 150)

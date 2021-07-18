@@ -8,11 +8,16 @@ def main():
 	csg = CS.CoinStats('dogecoin')
 	cse = CS.CoinStats('ethereum')
 	csb = CS.CoinStats('bitcoin')
+	csp = CS.CoinStats("polkadot")
+	csc = CS.CoinStats("cardano")
+	csl = CS.CoinStats("litecoin")
+	csk = CS.CoinStats('kusama')
+	cst = CS.CoinStats("tron")
+	coins = [csg, cse, csb, csp, csc, csl, csk, cst]
 	while True:
-		csg.check_price()
-		cse.check_price()
-		csb.check_price()
-		time.sleep(1.5)
+		for coin in coins:
+			coin.check_price()
+		time.sleep((60/len(coins))+1)	
 
 
 if __name__ == "__main__":

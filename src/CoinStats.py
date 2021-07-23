@@ -27,6 +27,13 @@ class CoinStats():
 		doge_info = self.cg.get_price(ids=self.coin, vs_currencies='usd')
 		return doge_info[self.coin]['usd']
 
+	def get_prices(self):
+		price_info = self.cg.get_price(ids=self.coin, vs_currencies='usd')
+		prices = []
+		for coin in self.coin:
+			prices.append(price_info[coin]['usd'])
+		return prices
+
 	def check_price(self):
 		try:
 			self.current_price = self.get_price()

@@ -132,6 +132,7 @@ class Exchange():
 				self.current_trades.remove(trade)
 			elif (response["trade"]["status"] == "completed" and response["trade"]["success"] == False):
 				print("Trade Failed")
+				print(response["trade"]["errorMessage"])
 				self.current_trades.remove(trade)
 		return len(self.current_trades) == 0
 

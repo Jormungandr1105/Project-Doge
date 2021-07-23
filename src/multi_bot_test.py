@@ -40,7 +40,7 @@ def run():
 	coin_stuff.append(["TRN", 0.0])
 	'''
 	bot = MultiBot(coin_stuff, 0.0046)
-	bot.run_sim(prices, percs, perc_avgs)
+	bot.run_sim(prices, percs)
 
 
 if __name__ == '__main__':

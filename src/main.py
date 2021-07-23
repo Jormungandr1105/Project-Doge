@@ -1,7 +1,8 @@
 #!/usr/bin/python3
 
 import exchange as ex
-import Bot
+from multi_bot import *
+import CoinStats as CS
 import time
 import json
 
@@ -21,9 +22,13 @@ def setup():
 
 def main():
 	EXCHANGE = setup()
-	config_file = "bit_4py0.conf"
-	minimum_crypto = 0.0001
-	Bot.run_real(EXCHANGE, "bitcoin", "XBT", "../jsons/exchange_balance.json", minimum_crypto, config_file=config_file)
+	coins = ["bitcoin", "dogecoin", "ethereum", "kusama", "litecoin", "polkadot", "tron"]
+	coin_symbols = ["XBT", "XDG", "ETH", "KSM", "LTC", "DOT", "TRX"]
+	c_stats = CS.CoinStats(coins)
+
+	bot = MultiBot(coins, loss=.0046, exchange=EXCHANGE)
+	bot.run_real(c_stats, coin_symbols)
+
 
 
 if __name__ == '__main__':

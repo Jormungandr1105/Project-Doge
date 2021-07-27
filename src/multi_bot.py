@@ -2,6 +2,8 @@
 import plot
 import time
 import datetime
+import math
+
 
 class MultiBot():
 
@@ -14,9 +16,10 @@ class MultiBot():
 		self.money = 0.00
 		self.loss = loss
 		self.exchange = exchange
-		f = open(self.filename, "w+")
-		f.write("")
-		f.close()
+		# Keep using the same one for a while
+		#f = open(self.filename, "w+")
+		#f.write("")
+		#f.close()
 
 	def run_sim(self,prices,percentages):
 		markup = 2*self.loss+.005
@@ -71,7 +74,7 @@ class MultiBot():
 						j += 1
 					# Let me know
 					if changed:
-						self.log_real(prices, coin_symbols)
+						self.log_real(prices, coin_symbols, get_day())
 					prev_prices = prices
 				if not apiConnected:
 					apiConnected = True
@@ -130,6 +133,7 @@ class MultiBot():
 
 	def cash_in(self, current_prices, index):
 		if self.money > 5.00:
+			# Convert cash to crypto
 			self.coins[index][1] += (self.money / current_prices[index]) * (1-self.conv_cost)
 			self.money = 0.00
 			return True
@@ -144,12 +148,13 @@ class MultiBot():
 		f.write(text)
 		f.close()
 
-	def log_real(self, current_prices, coin_symbols):
+	def log_real(self, current_prices, coin_symbols, day_no):
 		text = "["
 		for coin in self.coins:
 			text += "{0}:{1},".format(coin[0], coin[1])
 		text += "] CASH: ${0} {1}\n".format(self.money,self.get_worth_real(current_prices, coin_symbols))
-		f = open(self.filename, "a")
+		filename = "../transactions/{}.txt".format(day_no)
+		f = open(filename, "a")
 		f.write(text)
 		f.close()
 
@@ -184,5 +189,10 @@ def trunc_after_dec(number, after_dec):
 		return float(str_num)
 
 def screen_log(output):
-	c_time = datetime.datetime.now().split(".")[0] # Date and Time
+	c_time = datetime.datetime.now() # Date and Time
 	print("{0}: {1}".format(c_time, output))
+
+def get_day():
+	day_offset = 105-18733 # didn't feel like actually figuring it out offset for: days since Jan 1st 2021
+	day_no = math.floor((time.time()+-14400)/86400) + 105-18733 # Logic Spelt out in CoinStats, filled in here for brevity
+	return day_no

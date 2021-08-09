@@ -154,7 +154,10 @@ class MultiBot():
 			text += "{0}:{1},".format(coin[0], coin[1])
 		text += "] CASH: ${0} {1}\n".format(self.money,self.get_worth_real(current_prices, coin_symbols))
 		filename = "../transactions/{}.txt".format(day_no)
-		f = open(filename, "a")
+		try:
+			f = open(filename, "a")
+		except FileNotFoundError:
+			f = open(filename, "w+")
 		f.write(text)
 		f.close()
 
